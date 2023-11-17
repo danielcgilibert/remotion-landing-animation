@@ -1,63 +1,67 @@
-import { z } from "zod";
 import {
   AbsoluteFill,
-  Sequence,
+  Easing,
+  Img,
+  interpolate,
   spring,
+  staticFile,
   useCurrentFrame,
   useVideoConfig,
-} from "remotion";
-import { CompositionProps } from "../../types/constants";
-import { NextLogo } from "./NextLogo";
-import { loadFont, fontFamily } from "@remotion/google-fonts/Inter";
-import React, { useMemo } from "react";
-import { Rings } from "./Rings";
-import { TextFade } from "./TextFade";
+} from 'remotion'
+import { linearTiming, TransitionSeries } from '@remotion/transitions'
+import { fade } from '@remotion/transitions/fade'
 
-loadFont();
+const myImage = staticFile(`/web4.png`)
 
-const container: React.CSSProperties = {
-  backgroundColor: "white",
-};
+export const MyComposition: React.FC = () => {
+  const { fps, durationInFrames, width, height } = useVideoConfig()
+  const frame = useCurrentFrame() // 10
 
-const logo: React.CSSProperties = {
-  justifyContent: "center",
-  alignItems: "center",
-};
+  const positionR = interpolate(frame, [0, 25], [0, 30], {})
+  const skewY = interpolate(positionR, [0, 25], [0, 0.5], {})
+  const Scale = interpolate(frame, [0, 25], [100, 102], {
+    extrapolateRight: 'clamp',
+  })
 
-export const Main = ({ title }: z.infer<typeof CompositionProps>) => {
-  const frame = useCurrentFrame();
-  const { fps } = useVideoConfig();
-
-  const transitionStart = 2 * fps;
-  const transitionDuration = 1 * fps;
-
-  const logoOut = spring({
-    fps,
-    frame,
-    config: {
-      damping: 200,
-    },
-    durationInFrames: transitionDuration,
-    delay: transitionStart,
-  });
-
-  const titleStyle: React.CSSProperties = useMemo(() => {
-    return { fontFamily, fontSize: 70 };
-  }, []);
+  const ToTop = interpolate(frame, [80, 200], [0, 100])
 
   return (
-    <AbsoluteFill style={container}>
-      <Sequence durationInFrames={transitionStart + transitionDuration}>
-        <Rings outProgress={logoOut}></Rings>
-        <AbsoluteFill style={logo}>
-          <NextLogo outProgress={logoOut}></NextLogo>
+    <TransitionSeries>
+      <TransitionSeries.Sequence durationInFrames={90}>
+        <AbsoluteFill className=' items-center justify-center bg-gradient-to-r from-violet-500 via-purple-300 to-blue-800 '>
+          {/* <Img
+            src={myImage}
+            className={`w-full h-full object-cover  rounded-3xl shadow-2xl transition-all ease-in   `}
+            style={{ transform: `skewY(${skewY}deg)` }}
+          /> */}
+          <Img
+            src={myImage}
+            className={`object-cover   absolute right-48 top-28 h-[1100px]  shadow-2xl rounded-2xl      `}
+            style={{
+              right: `${positionR}px`,
+              scale: `${Scale}%`,
+              transform: `skewY(-${skewY}deg)`,
+            }}
+          />
         </AbsoluteFill>
-      </Sequence>
-      <Sequence from={transitionStart + transitionDuration / 2}>
-        <TextFade>
-          <h1 style={titleStyle}>{title}</h1>
-        </TextFade>
-      </Sequence>
-    </AbsoluteFill>
-  );
-};
+      </TransitionSeries.Sequence>
+
+      <TransitionSeries.Transition
+        timing={linearTiming({ durationInFrames: 20 })}
+        presentation={fade()}
+      />
+
+      <TransitionSeries.Sequence durationInFrames={200}>
+        <AbsoluteFill className=' items-center justify-center bg-gradient-to-r from-violet-500 via-purple-300 to-blue-800 '>
+          <Img
+            src={myImage}
+            className={`w-screen h-full object-cover rounded-3xl scale-110  absolute  top-0    `}
+            style={{
+              top: `-${ToTop}px`,
+            }}
+          />
+        </AbsoluteFill>
+      </TransitionSeries.Sequence>
+    </TransitionSeries>
+  )
+}
